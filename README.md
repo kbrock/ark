@@ -80,7 +80,7 @@ Extract the archive to a specified path, does not create any symbolic links.
   - Default: `/usr/local`
 - `has_binaries`: array of binary commands to symlink into `/usr/local/bin/`,
   you must specify the relative path.
-  - Example: `[ 'bin/java', 'bin/javaws' ]`
+  - Example: `[ 'bin/java', 'bin/javaws' ]` will link /usr/local/bin/java to /usr/local/jdk/bin/java (and the same with javaws)
 - `append_env_path`: boolean, if true, append the `./bin` directory of the
   extracted directory to the global `PATH` variable for all users.
 
@@ -113,20 +113,25 @@ Extract a specified file from an archive and places in specified path.
 Attribute Parameters
 --------------------
 
-- `name`: name of the package, defaults to the resource name.
+- `name`: defaults to resource `name`. name of the package.
 - `url`: url for tarball, `.tar.gz`, `.bin` (oracle-specific), `.war`,
   and `.zip` currently supported. Also supports special syntax
   `:name:version:apache_mirror:` that will auto-magically construct
   download url from the apache mirrors site.
-- `version`: software version, required.
+- `version`: software version. required.
 - `checksum`: sha256 checksum, used for security .
-- `mode`: file mode for `app_home`, is an integer.
+- `mode`: default `0775` file mode for `app_home`.
+- `full_path`
+- `creates`
+- `release_file`
+- `extension`: defaults to extension of `url`: the extension of the downloaded archive
+  if it can not be determined by the downloaded file
 - `prefix_root`: default `prefix_root`, for use with `:install*`
   actions.
-- `prefix_home`: default directory prefix for a friendly symlink to
+- `prefix_home`: default to `/usr/local/` directory prefix for a friendly symlink to
   the path.
-  - Example: `/usr/local/maven` -> `/usr/local/maven-2.2.1`
-- `prefix_bin`: default directory to place a symlink to a binary
+  - Example: a symbolic link from `prefix_home` + `name` linked to `path`. e.g.: `/usr/local/maven` -> `/usr/local/maven-2.2.1`
+- `prefix_bin`: default to `/usr/local/bin/` directory to place a symlink to a binary
   command.
   - Example: `/opt/bin/mvn` -> `/opt/maven-2.2.1/bin/mvn`, where the
     `prefix_bin` is `/opt/bin`
@@ -140,13 +145,9 @@ Attribute Parameters
 - `has_binaries`: array of binary commands to symlink into
   `/usr/local/bin/`, you must specify the relative path.
   - Example: `[ 'bin/java', 'bin/javaws' ]`
-- `append_env_path`: boolean, similar to `has_binaries` but less
-  granular. If true, append the `./bin` directory of the extracted
-  directory to. the `PATH` environment variable for all users, by
-  placing a file in `/etc/profile.d/`. The commands are symbolically
-  linked into `/usr/bin/*`. This option provides more granularity than
-  the boolean option.
-  - Example: `mvn`, `java`, `javac`, etc.
+- `append_env_path`: default to `false` boolean, similar to `has_binaries`.
+  If true, adds `<>/bin` tothe `PATH` environment variable for all users, by
+  placing a file in `/etc/profile.d/`.
 - `environment`: hash of environment variables to pass to invoked
   shell commands like `tar`, `unzip`, `configure`, and `make`.
 - `strip_leading_dir`: by default, ark strips the leading directory
@@ -158,6 +159,8 @@ Attribute Parameters
 - `make_opts`: an array of command line options for use with `make`.
   - Example: `[ '--warn-undefined-variables', '--load-average=2' ]`
 - `owner`: owner of extracted directory.
+  - Default: `root`
+- `group`: group owner of extracted directory.
   - Default: `root`
 
 ### Examples
