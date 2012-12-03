@@ -29,10 +29,10 @@ class Chef
       end
 
       def action_download
-        unless new_resource.url =~ /^(http|ftp).*$/
-            new_resource.url = set_apache_url(url)
-        end
         unless ::File.exists?(new_resource.release_file) or unpacked?(new_resource.path)
+          unless new_resource.url =~ /^(http|ftp).*$/
+            new_resource.url = set_apache_url(new_resource.url)
+          end
           f = Chef::Resource::RemoteFile.new(new_resource.release_file, run_context)
           f.source new_resource.url
           if new_resource.checksum
@@ -235,11 +235,12 @@ class Chef
         when /tar.gz|tgz/  then "tar_xzf"
         when /tar.bz2|tbz/ then "tar_xjf"
         when /zip|war|jar/ then "unzip"
-        else raise "Don't know how to expand #{new_resource.url}"
+        else raise "Don't know how to expand #{new_resource.url||new_resource.release_file}"
         end
       end
 
       def set_paths
+        raise "Missing required resource attribute url" unless new_resource.url || new_resource.release_file
         release_ext = parse_file_extension
         prefix_bin  = new_resource.prefix_bin.nil? ? new_resource.run_context.node['ark']['prefix_bin'] : new_resource.prefix_bin
         prefix_root = new_resource.prefix_root.nil? ? new_resource.run_context.node['ark']['prefix_root'] : new_resource.prefix_root
@@ -273,7 +274,7 @@ class Chef
       def parse_file_extension
         if new_resource.extension.nil?
           # purge any trailing redirect
-          url = new_resource.url.clone
+          url = (new_resource.url||new_resource.release_file).clone
           url =~ /^https?:\/\/.*(.gz|bz2|bin|zip|jar|tgz|tbz)(\/.*\/)/
           url.gsub!($2, '') unless $2.nil?
           # remove tailing query string
