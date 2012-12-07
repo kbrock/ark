@@ -204,6 +204,23 @@ class Chef
             l.run_action(:create)
           end
         end
+        if new_resource.alternative_binaries
+          new_resource.alternative_binaries.each do |cmd|
+            new_file_name = ::File.join(new_resource.path, ::File.basename(bin))
+            current_bin_link = ::File.exists?(new_file_name) && ::File.readlink(new_file_name)
+            if current_bin_link != "#{app_home}/bin/#{cmd}"
+              converge_by("update-alternatives") do
+                 cmd = Chef::ShellOut.new(
+                                          %Q[ update-alternatives --install /usr/bin/#{cmd} #{cmd} #{app_home}/bin/#{cmd} 1;
+                                              update-alternatives --set #{cmd} #{app_home}/bin/#{cmd}  ]
+                                         ).run_command
+                 unless cmd.exitstatus == 0
+                    Chef::Application.fatal!(%Q[ update alternatives  failed ])
+                 end
+              end
+            end
+          end
+        end
         if new_resource.append_env_path
           append_to_env_path
         end
